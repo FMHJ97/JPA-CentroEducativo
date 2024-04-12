@@ -4,12 +4,16 @@ import javax.swing.JPanel;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.util.List;
 import java.awt.Color;
 import javax.swing.JButton;
 import java.awt.Font;
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
+
+import centroeducativo.controladores.ControladorMateriaJPA;
+import centroeducativo.controladores.ControladorProfesorJPA;
 import centroeducativo.entities.Materia;
 import centroeducativo.entities.Profesor;
 import javax.swing.JScrollPane;
@@ -225,6 +229,35 @@ public class JPanelValoracion extends JPanel {
 		gbc_jbtnGuardar.gridy = 2;
 		add(jbtnGuardar, gbc_jbtnGuardar);
 
+		// Precarga de Datos de los JComboBox.
+		loadAllMateria();
+		loadAllProfesor();
+	}
+	
+	/**
+	 * 
+	 */
+	private void loadAllProfesor() {
+		@SuppressWarnings("unchecked")
+		List<Profesor> profesores = (List<Profesor>) ControladorProfesorJPA
+		.getInstance().findAll();
+		
+		for (Profesor profesor : profesores) {
+			this.jcbProfesor.addItem(profesor);;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private void loadAllMateria() {
+		@SuppressWarnings("unchecked")
+		List<Materia> materias = (List<Materia>) ControladorMateriaJPA
+				.getInstance().findAll();
+		
+		for (Materia materia : materias) {
+			this.jcbMateria.addItem(materia);
+		}
 	}
 
 }
