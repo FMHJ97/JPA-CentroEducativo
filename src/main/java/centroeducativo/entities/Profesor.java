@@ -19,7 +19,7 @@ public class Profesor extends Entidad {
 	@Column(name = "apellido1")
 	private String apellido1;
 	
-	@Column(name = "apellido1")
+	@Column(name = "apellido2")
 	private String apellido2;
 	
 	/**

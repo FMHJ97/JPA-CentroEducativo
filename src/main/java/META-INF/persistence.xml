@@ -5,6 +5,8 @@
 		transaction-type="RESOURCE_LOCAL">
 		<class>centroeducativo.entities.Materia</class>
 		<class>centroeducativo.entities.Profesor</class>
+		<class>centroeducativo.entities.Estudiante</class>
+		<class>centroeducativo.entities.ValoracionMateria</class>
 		<properties>
 			<property name="javax.persistence.jdbc.driver"
 				value="com.mysql.cj.jdbc.Driver" />

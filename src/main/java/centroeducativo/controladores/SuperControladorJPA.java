@@ -42,7 +42,7 @@ public class SuperControladorJPA {
 	 */
 	@SuppressWarnings("unchecked")
 	public List<? extends Entidad> findAll() {
-		return (List<Entidad>)
+		return (List<? extends Entidad>)
 		getEntityManager()
 		.createNativeQuery("select * from " + this.nombreTabla, this.tipoEntidad)
 		.getResultList();

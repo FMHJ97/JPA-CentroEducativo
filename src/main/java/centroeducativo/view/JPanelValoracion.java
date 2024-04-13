@@ -4,19 +4,28 @@ import javax.swing.JPanel;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.awt.Color;
+
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import java.awt.Font;
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 
+import centroeducativo.controladores.ControladorEstudianteJPA;
 import centroeducativo.controladores.ControladorMateriaJPA;
 import centroeducativo.controladores.ControladorProfesorJPA;
+import centroeducativo.controladores.ControladorValoracionMateriaJPA;
+import centroeducativo.entities.Estudiante;
 import centroeducativo.entities.Materia;
 import centroeducativo.entities.Profesor;
 import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
 
 public class JPanelValoracion extends JPanel {
 
@@ -24,7 +33,25 @@ public class JPanelValoracion extends JPanel {
 	private JComboBox<Materia> jcbMateria;
 	private JComboBox<Profesor> jcbProfesor;
 	private JComboBox<Integer> jcbNota;
+	private JButton jbtnGuardar;
 	
+	private Profesor pActual;
+	private Materia mActual;
+	private Integer nActual;
+	
+	// Lista que contendrá a TODOS los estudiantes de la BBDD.
+	// Más adelante, se filtrarán aquellos estudiantes que
+	// cumplan las condiciones de los JCBox.
+	private List<Estudiante> allEstudiantes = (List<Estudiante>) ControladorEstudianteJPA
+			.getInstance().findAll();
+	
+	// Elemento que listará a los estudiantes NO seleccionados.
+	private JList jlNoSelect;
+	// Elemento que listará a los estudiantes seleccionados.
+	private JList jlSelect;
+	
+	private DefaultListModel<Estudiante> listModelEstudiantesSelect = null;
+	private DefaultListModel<Estudiante> listModelEstudiantesNoSelect = null;
 
 	/**
 	 * Create the panel.
@@ -113,6 +140,15 @@ public class JPanelValoracion extends JPanel {
 		panel.add(jcbNota, gbc_jcbNota);
 		
 		JButton jbtnActualizar = new JButton("Botón Actualizar Alumnado");
+		jbtnActualizar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				loadAllEstudiantes();
+				if (!jbtnGuardar.isEnabled()) {
+					jbtnGuardar.setEnabled(true);
+				}
+			}
+		});
 		jbtnActualizar.setFont(new Font("Arial", Font.BOLD, 15));
 		GridBagConstraints gbc_jbtnActualizar = new GridBagConstraints();
 		gbc_jbtnActualizar.insets = new Insets(10, 0, 10, 10);
@@ -151,7 +187,7 @@ public class JPanelValoracion extends JPanel {
 		gbc_lblAlumnadoNoSeleccionado_1.gridy = 0;
 		panel_1.add(lblAlumnadoNoSeleccionado_1, gbc_lblAlumnadoNoSeleccionado_1);
 		
-		JScrollPane jscpNoSelect = new JScrollPane();
+		JScrollPane jscpNoSelect = new JScrollPane(jlNoSelect);
 		GridBagConstraints gbc_jscpNoSelect = new GridBagConstraints();
 		gbc_jscpNoSelect.insets = new Insets(0, 10, 10, 10);
 		gbc_jscpNoSelect.fill = GridBagConstraints.BOTH;
@@ -159,7 +195,8 @@ public class JPanelValoracion extends JPanel {
 		gbc_jscpNoSelect.gridy = 1;
 		panel_1.add(jscpNoSelect, gbc_jscpNoSelect);
 		
-		JList jlNoSelect = new JList();
+		jlNoSelect = new JList(this.getDefaultListModelNoSelect());
+		this.jlNoSelect.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		jlNoSelect.setFont(new Font("Arial", Font.PLAIN, 12));
 		jscpNoSelect.setViewportView(jlNoSelect);
 		
@@ -179,6 +216,12 @@ public class JPanelValoracion extends JPanel {
 		panel_2.setLayout(gbl_panel_2);
 		
 		JButton jbtnAllNoSelect = new JButton("<<");
+		jbtnAllNoSelect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				quitarAllEstudiantes();
+			}
+		});
 		jbtnAllNoSelect.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		GridBagConstraints gbc_jbtnAllNoSelect = new GridBagConstraints();
 		gbc_jbtnAllNoSelect.insets = new Insets(0, 0, 5, 0);
@@ -187,6 +230,12 @@ public class JPanelValoracion extends JPanel {
 		panel_2.add(jbtnAllNoSelect, gbc_jbtnAllNoSelect);
 		
 		JButton jbtnNoSelect = new JButton("<");
+		jbtnNoSelect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				quitarEstudiante();
+			}
+		});
 		jbtnNoSelect.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		GridBagConstraints gbc_jbtnNoSelect = new GridBagConstraints();
 		gbc_jbtnNoSelect.insets = new Insets(0, 0, 5, 0);
@@ -195,6 +244,12 @@ public class JPanelValoracion extends JPanel {
 		panel_2.add(jbtnNoSelect, gbc_jbtnNoSelect);
 		
 		JButton jbtnSelect = new JButton(">");
+		jbtnSelect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				agregarEstudiante();
+			}
+		});
 		jbtnSelect.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		GridBagConstraints gbc_jbtnSelect = new GridBagConstraints();
 		gbc_jbtnSelect.insets = new Insets(0, 0, 5, 0);
@@ -203,13 +258,19 @@ public class JPanelValoracion extends JPanel {
 		panel_2.add(jbtnSelect, gbc_jbtnSelect);
 		
 		JButton jbtnAllSelect = new JButton(">>");
+		jbtnAllSelect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				agregaAllEstudiantes();
+			}
+		});
 		jbtnAllSelect.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		GridBagConstraints gbc_jbtnAllSelect = new GridBagConstraints();
 		gbc_jbtnAllSelect.gridx = 0;
 		gbc_jbtnAllSelect.gridy = 3;
 		panel_2.add(jbtnAllSelect, gbc_jbtnAllSelect);
 		
-		JScrollPane jscpSelect = new JScrollPane();
+		JScrollPane jscpSelect = new JScrollPane(jlSelect);
 		GridBagConstraints gbc_jscpSelect = new GridBagConstraints();
 		gbc_jscpSelect.insets = new Insets(0, 10, 10, 10);
 		gbc_jscpSelect.fill = GridBagConstraints.BOTH;
@@ -217,11 +278,13 @@ public class JPanelValoracion extends JPanel {
 		gbc_jscpSelect.gridy = 1;
 		panel_1.add(jscpSelect, gbc_jscpSelect);
 		
-		JList jlSelect = new JList();
+		jlSelect = new JList(this.getDefaultListModelSelect());
+		this.jlSelect.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		jlSelect.setFont(new Font("Arial", Font.PLAIN, 12));
 		jscpSelect.setViewportView(jlSelect);
 		
-		JButton jbtnGuardar = new JButton("Guardar las Notas de Todos los Alumnos Seleccionados");
+		jbtnGuardar = new JButton("Guardar las Notas de Todos los Alumnos Seleccionados");
+		jbtnGuardar.setEnabled(false);
 		jbtnGuardar.setFont(new Font("Arial", Font.BOLD, 15));
 		GridBagConstraints gbc_jbtnGuardar = new GridBagConstraints();
 		gbc_jbtnGuardar.insets = new Insets(50, 0, 20, 0);
@@ -232,6 +295,147 @@ public class JPanelValoracion extends JPanel {
 		// Precarga de Datos de los JComboBox.
 		loadAllMateria();
 		loadAllProfesor();
+	}
+	
+	/**
+	 * 
+	 */
+	private void guardar() {
+		
+		if (this.listModelEstudiantesSelect.size() > 1) {
+			
+			List<Estudiante> l = new ArrayList<Estudiante>();
+
+			for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
+				l.add(this.listModelEstudiantesSelect.getElementAt(i));
+			}
+			
+			
+			
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private void quitarEstudiante() {
+		
+		List<Estudiante> l = new ArrayList<Estudiante>();
+
+		for (int i = 0; i < this.jlSelect.getSelectedIndices().length; i++) {
+			l.add(this.listModelEstudiantesSelect.getElementAt(this.jlSelect.getSelectedIndices()[i]));
+		}
+		
+		for (int i = this.jlSelect.getSelectedIndices().length - 1; i >= 0; i--) {
+			this.listModelEstudiantesSelect.removeElementAt(this.jlSelect.getSelectedIndices()[i]);
+		}
+		
+		for (Estudiante estudiante : l) {
+			this.listModelEstudiantesNoSelect.addElement(estudiante);
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private void agregarEstudiante() {
+		
+		List<Estudiante> l = new ArrayList<Estudiante>();
+
+		for (int i = 0; i < this.jlNoSelect.getSelectedIndices().length; i++) {
+			l.add(this.listModelEstudiantesNoSelect.getElementAt(this.jlNoSelect.getSelectedIndices()[i]));
+		}
+		
+		for (int i = this.jlNoSelect.getSelectedIndices().length - 1; i >= 0; i--) {
+			this.listModelEstudiantesNoSelect.removeElementAt(this.jlNoSelect.getSelectedIndices()[i]);
+		}
+		
+		for (Estudiante estudiante : l) {
+			this.listModelEstudiantesSelect.addElement(estudiante);
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private void quitarAllEstudiantes() {
+		
+		List<Estudiante> l = new ArrayList<Estudiante>();
+		
+		for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
+			l.add(this.listModelEstudiantesSelect.getElementAt(i));
+		}
+		
+		this.listModelEstudiantesSelect.clear();
+		
+		for (Estudiante estudiante : l) {
+			this.listModelEstudiantesNoSelect.addElement(estudiante);
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private void agregaAllEstudiantes() {
+		
+		List<Estudiante> l = new ArrayList<Estudiante>();
+		
+		for (int i = 0; i < this.listModelEstudiantesNoSelect.size(); i++) {
+			l.add(this.listModelEstudiantesNoSelect.getElementAt(i));
+		}
+		
+		this.listModelEstudiantesNoSelect.clear();
+		
+		for (Estudiante estudiante : l) {
+			this.listModelEstudiantesSelect.addElement(estudiante);
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private void loadAllEstudiantes() {
+		this.listModelEstudiantesNoSelect.clear();
+		this.listModelEstudiantesSelect.clear();
+		
+		this.pActual = (Profesor) this.jcbProfesor.getSelectedItem();
+		this.mActual = (Materia) this.jcbMateria.getSelectedItem();
+		this.nActual = (Integer) this.jcbNota.getSelectedItem();
+		
+		for (Estudiante estudiante : allEstudiantes) {
+			
+			if (ControladorValoracionMateriaJPA.getInstance()
+					.findRegistroByNota(mActual, pActual, estudiante, nActual)) {
+				
+				this.listModelEstudiantesSelect.addElement(estudiante);
+				
+			} else {
+				this.listModelEstudiantesNoSelect.addElement(estudiante);
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private DefaultListModel<Estudiante> getDefaultListModelNoSelect() {
+		this.listModelEstudiantesNoSelect = new DefaultListModel<Estudiante>();
+		return this.listModelEstudiantesNoSelect;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private DefaultListModel<Estudiante> getDefaultListModelSelect() {
+		this.listModelEstudiantesSelect = new DefaultListModel<Estudiante>();
+		return this.listModelEstudiantesSelect;
 	}
 	
 	/**
