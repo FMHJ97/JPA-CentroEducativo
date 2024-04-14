@@ -16,6 +16,7 @@ import java.awt.Font;
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 
 import centroeducativo.controladores.ControladorEstudianteJPA;
 import centroeducativo.controladores.ControladorMateriaJPA;
@@ -24,6 +25,8 @@ import centroeducativo.controladores.ControladorValoracionMateriaJPA;
 import centroeducativo.entities.Estudiante;
 import centroeducativo.entities.Materia;
 import centroeducativo.entities.Profesor;
+import centroeducativo.entities.ValoracionMateria;
+
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
@@ -37,7 +40,7 @@ public class JPanelValoracion extends JPanel {
 	
 	private Profesor pActual;
 	private Materia mActual;
-	private Integer nActual;
+	private int nActual;
 	
 	// Lista que contendrá a TODOS los estudiantes de la BBDD.
 	// Más adelante, se filtrarán aquellos estudiantes que
@@ -284,6 +287,12 @@ public class JPanelValoracion extends JPanel {
 		jscpSelect.setViewportView(jlSelect);
 		
 		jbtnGuardar = new JButton("Guardar las Notas de Todos los Alumnos Seleccionados");
+		jbtnGuardar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				guardar();
+			}
+		});
 		jbtnGuardar.setEnabled(false);
 		jbtnGuardar.setFont(new Font("Arial", Font.BOLD, 15));
 		GridBagConstraints gbc_jbtnGuardar = new GridBagConstraints();
@@ -302,22 +311,45 @@ public class JPanelValoracion extends JPanel {
 	 */
 	private void guardar() {
 		
-		if (this.listModelEstudiantesSelect.size() > 1) {
-			
-			List<Estudiante> l = new ArrayList<Estudiante>();
+		List<Estudiante> l = new ArrayList<Estudiante>();
 
-			for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
-				l.add(this.listModelEstudiantesSelect.getElementAt(i));
+		for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
+			l.add(this.listModelEstudiantesSelect.getElementAt(i));
+		}
+		
+		// Si no existe elementos en la lista de seleccionados,
+		// mostrará un mensaje. Si existen alumnos, procedemos a insertar o
+		// modificar la nota de los alumnos seleccionados.
+		if (l.size() > 0) {
+			for (Estudiante estudiante : l) {
+				
+				ValoracionMateria vm = ControladorValoracionMateriaJPA
+						.getInstance().findRegistroVM(mActual, pActual, estudiante);
+				
+				// Si hay un registro, se realiza una modificacion.
+				// En caso contrario, una insercion.
+				if (vm != null) {
+					ControladorValoracionMateriaJPA.getInstance()
+						.modificacionNota(vm, nActual);
+				} else {
+					ControladorValoracionMateriaJPA.getInstance()
+						.insercionNota(mActual, pActual, estudiante, nActual);
+				}
+				
 			}
 			
+			JOptionPane.showMessageDialog(null, 
+					"Se han realizado cambios en las notas de los alumanos seleccionados");
 			
-			
+		} else {
+			JOptionPane.showMessageDialog(null, 
+					"Seleccione a los estudiantes que desee modificar su nota");
 		}
 		
 	}
 	
 	/**
-	 * 
+	 * Mueve uno o más estudiantes a la lista de alumnos no seleccionados.
 	 */
 	private void quitarEstudiante() {
 		
@@ -338,7 +370,7 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Mueve uno o más estudiantes a la lista de alumnos seleccionados.
 	 */
 	private void agregarEstudiante() {
 		
@@ -359,7 +391,8 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Método que mueve a todos los estudiantes seleccionados
+	 * a la lista de no seleccionados.
 	 */
 	private void quitarAllEstudiantes() {
 		
@@ -378,7 +411,8 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Método que mueve a todos los estudiantes no seleccionados
+	 * a la lista de seleccionados.
 	 */
 	private void agregaAllEstudiantes() {
 		
@@ -397,7 +431,8 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Carga a Todos los estudiantes y los separa si cumplen con las
+	 * especificaciones de los JComboBox.
 	 */
 	private void loadAllEstudiantes() {
 		this.listModelEstudiantesNoSelect.clear();
@@ -405,12 +440,14 @@ public class JPanelValoracion extends JPanel {
 		
 		this.pActual = (Profesor) this.jcbProfesor.getSelectedItem();
 		this.mActual = (Materia) this.jcbMateria.getSelectedItem();
-		this.nActual = (Integer) this.jcbNota.getSelectedItem();
+		this.nActual = (int) this.jcbNota.getSelectedItem();
 		
 		for (Estudiante estudiante : allEstudiantes) {
 			
-			if (ControladorValoracionMateriaJPA.getInstance()
-					.findRegistroByNota(mActual, pActual, estudiante, nActual)) {
+			ValoracionMateria vm = ControladorValoracionMateriaJPA
+					.getInstance().findRegistroVM(mActual, pActual, estudiante);
+			
+			if (vm != null && vm.getValoracion() == this.nActual) {
 				
 				this.listModelEstudiantesSelect.addElement(estudiante);
 				
@@ -439,7 +476,7 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Cargar todos los profesores en el JComboBox Profesor.
 	 */
 	private void loadAllProfesor() {
 		@SuppressWarnings("unchecked")
@@ -452,7 +489,7 @@ public class JPanelValoracion extends JPanel {
 	}
 	
 	/**
-	 * 
+	 * Cargar todas las materias en el JComboBox Materia.
 	 */
 	private void loadAllMateria() {
 		@SuppressWarnings("unchecked")

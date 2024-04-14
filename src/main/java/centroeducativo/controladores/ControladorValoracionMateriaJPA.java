@@ -1,13 +1,7 @@
 package centroeducativo.controladores;
 
-import java.util.List;
-
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-
 import centroeducativo.entities.Estudiante;
 import centroeducativo.entities.Materia;
 import centroeducativo.entities.Profesor;
@@ -38,71 +32,59 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 	 * @param m
 	 * @param p
 	 * @param e
-	 * @param nota
 	 * @return
 	 */
-	public boolean findRegistroByNota(Materia m, Profesor p, Estudiante e, Integer nota) {
+	public ValoracionMateria findRegistroVM(Materia m, Profesor p, Estudiante e) {
 		EntityManager em = getEntityManager();
 		
 		Query q = em.createNativeQuery("select * from valoracionmateria "
-				+ "where idMateria = ? and idProfesor = ? and idEstudiante = ? and valoracion = ?");
+				+ "where idMateria = ? and idProfesor = ? and idEstudiante = ?", ValoracionMateria.class);
 		
 		q.setParameter(1, m.getId());
 		q.setParameter(2, p.getId());
 		q.setParameter(3, e.getId());
-		q.setParameter(4, nota);
 		
 		try {
-			q.getSingleResult();
-			return true;
+			return (ValoracionMateria) q.getSingleResult();
 		} catch (Exception ex) {
-			return false;
+			return null;
 		}
 	}
 	
 	/**
 	 * 
-	 * @param m
-	 * @param p
-	 * @param e
+	 * @param vm
 	 * @param nota
 	 */
-	public void guardar(Materia m, Profesor p, Estudiante e, Integer nota) {
+	public void insercionNota(Materia m, Profesor p, Estudiante e, int nota) {
 		
-		if (findRegistroByNota(m, p, e, nota)) {
-			// Si existe un registro en la tabla valoracionmedia
-			modificacionNota(m, p, e, nota);
-		} else {
-			
-			
-		}
-		
-	}
-	
-	/**
-	 * 
-	 * @param m
-	 * @param p
-	 * @param e
-	 * @param nota
-	 */
-	private void modificacionNota(Materia m, Profesor p, Estudiante e, Integer nota) {
-
 		EntityManager em = getEntityManager();
-
-		TypedQuery<ValoracionMateria> q = em.createQuery(
-				"SELECT v FROM " + nombreTabla + " as v where v.idProfesor = ? "
-				+ "and v.idMateria and v.idEstudiante = ?", ValoracionMateria.class);
 		
-		q.setParameter(1, p.getId());
-		q.setParameter(2, m.getId());
-		q.setParameter(3, e.getId());
+		ValoracionMateria vm = new ValoracionMateria();
 		
-		em.getTransaction().begin();
-		
-		ValoracionMateria vm = q.getSingleResult();
+		vm.setIdMateria(m.getId());
+		vm.setIdProfesor(p.getId());
+		vm.setIdEstudiante(e.getId());
 		vm.setValoracion(nota);
 		
+		em.getTransaction().begin();
+		em.persist(vm);
+		em.getTransaction().commit();
+		
+		em.close();
+	}
+	
+	/**
+	 * 
+	 * @param vm
+	 * @param nota
+	 */
+	public void modificacionNota(ValoracionMateria vm, int nota) {
+
+		EntityManager em = getEntityManager();
+		
+		em.getTransaction().begin();
+		vm.setValoracion(nota);
 		em.merge(vm);
 		em.getTransaction().commit();
 		
