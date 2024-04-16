@@ -1,5 +1,7 @@
 package centroeducativo.controladores;
 
+import java.util.Date;
+
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import centroeducativo.entities.Estudiante;
@@ -56,7 +58,8 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 	 * @param vm
 	 * @param nota
 	 */
-	public void insercionNota(Materia m, Profesor p, Estudiante e, int nota) {
+	public void insercionNota(
+			Materia m, Profesor p, Estudiante e, int nota, Date fecha) {
 		
 		EntityManager em = getEntityManager();
 		
@@ -66,6 +69,7 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 		vm.setIdProfesor(p.getId());
 		vm.setIdEstudiante(e.getId());
 		vm.setValoracion(nota);
+		vm.setFecha(fecha);
 		
 		em.getTransaction().begin();
 		em.persist(vm);
@@ -79,12 +83,13 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 	 * @param vm
 	 * @param nota
 	 */
-	public void modificacionNota(ValoracionMateria vm, int nota) {
+	public void modificacionNota(ValoracionMateria vm, int nota, Date fecha) {
 
 		EntityManager em = getEntityManager();
 		
 		em.getTransaction().begin();
 		vm.setValoracion(nota);
+		vm.setFecha(fecha);
 		em.merge(vm);
 		em.getTransaction().commit();
 		

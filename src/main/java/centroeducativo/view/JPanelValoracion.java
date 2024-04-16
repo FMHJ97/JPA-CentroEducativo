@@ -6,7 +6,10 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.awt.Color;
 
@@ -29,6 +32,7 @@ import centroeducativo.entities.ValoracionMateria;
 
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.JFormattedTextField;
 
 public class JPanelValoracion extends JPanel {
 
@@ -56,6 +60,9 @@ public class JPanelValoracion extends JPanel {
 	private DefaultListModel<Estudiante> listModelEstudiantesSelect = null;
 	private DefaultListModel<Estudiante> listModelEstudiantesNoSelect = null;
 
+	private JFormattedTextField jftfFecha;
+	private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+	
 	/**
 	 * Create the panel.
 	 */
@@ -77,9 +84,9 @@ public class JPanelValoracion extends JPanel {
 		add(panel, gbc_panel);
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[]{0, 0, 0};
-		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0};
+		gbl_panel.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
 		gbl_panel.columnWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel.setLayout(gbl_panel);
 		
 		JLabel jlblMateria = new JLabel("Materia:");
@@ -152,12 +159,30 @@ public class JPanelValoracion extends JPanel {
 				}
 			}
 		});
+		
+		JLabel lblFecha = new JLabel("Fecha:");
+		lblFecha.setFont(new Font("Arial", Font.BOLD, 15));
+		GridBagConstraints gbc_lblFecha = new GridBagConstraints();
+		gbc_lblFecha.insets = new Insets(0, 0, 5, 5);
+		gbc_lblFecha.anchor = GridBagConstraints.EAST;
+		gbc_lblFecha.gridx = 0;
+		gbc_lblFecha.gridy = 3;
+		panel.add(lblFecha, gbc_lblFecha);
+		
+		jftfFecha = this.getJFormattedTextFieldDatePersonalizado();
+		jftfFecha.setFont(new Font("Arial", Font.PLAIN, 15));
+		GridBagConstraints gbc_jftfFecha = new GridBagConstraints();
+		gbc_jftfFecha.fill = GridBagConstraints.HORIZONTAL;
+		gbc_jftfFecha.insets = new Insets(5, 0, 10, 500);
+		gbc_jftfFecha.gridx = 1;
+		gbc_jftfFecha.gridy = 3;
+		panel.add(jftfFecha, gbc_jftfFecha);
 		jbtnActualizar.setFont(new Font("Arial", Font.BOLD, 15));
 		GridBagConstraints gbc_jbtnActualizar = new GridBagConstraints();
 		gbc_jbtnActualizar.insets = new Insets(10, 0, 10, 10);
 		gbc_jbtnActualizar.anchor = GridBagConstraints.EAST;
 		gbc_jbtnActualizar.gridx = 1;
-		gbc_jbtnActualizar.gridy = 3;
+		gbc_jbtnActualizar.gridy = 4;
 		panel.add(jbtnActualizar, gbc_jbtnActualizar);
 		
 		JPanel panel_1 = new JPanel();
@@ -312,6 +337,17 @@ public class JPanelValoracion extends JPanel {
 	private void guardar() {
 		
 		List<Estudiante> l = new ArrayList<Estudiante>();
+		
+		// Obtengo la fecha de la ventana.
+		String strFecha = this.jftfFecha.getText();
+		Date dateFecha = null;
+		if (!strFecha.trim().equals("")) {
+			try {
+				dateFecha = sdf.parse(strFecha);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
 
 		for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
 			l.add(this.listModelEstudiantesSelect.getElementAt(i));
@@ -330,10 +366,10 @@ public class JPanelValoracion extends JPanel {
 				// En caso contrario, una insercion.
 				if (vm != null) {
 					ControladorValoracionMateriaJPA.getInstance()
-						.modificacionNota(vm, nActual);
+						.modificacionNota(vm, nActual, dateFecha);
 				} else {
 					ControladorValoracionMateriaJPA.getInstance()
-						.insercionNota(mActual, pActual, estudiante, nActual);
+						.insercionNota(mActual, pActual, estudiante, nActual, dateFecha);
 				}
 				
 			}
@@ -461,10 +497,44 @@ public class JPanelValoracion extends JPanel {
 	 * 
 	 * @return
 	 */
+	private JFormattedTextField getJFormattedTextFieldDatePersonalizado() {
+		JFormattedTextField jftf = new JFormattedTextField(
+				new JFormattedTextField.AbstractFormatter() {
+
+			@Override
+			public String valueToString(Object value) throws ParseException {
+				if (value != null && value instanceof Date) {
+					return sdf.format(((Date) value));
+				}
+				return "";
+			}
+
+			@Override
+			public Object stringToValue(String text) throws ParseException {
+				try {
+					return sdf.parse(text);
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(null,
+							"Introduzca un formato de fecha válido (dd/MM/yyyy)");
+					return null;
+				}
+			}
+		});
+		jftf.setColumns(20);
+		jftf.setValue(new Date());
+		return jftf;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
 	private DefaultListModel<Estudiante> getDefaultListModelNoSelect() {
 		this.listModelEstudiantesNoSelect = new DefaultListModel<Estudiante>();
 		return this.listModelEstudiantesNoSelect;
 	}
+	
+	
 	
 	/**
 	 * 
