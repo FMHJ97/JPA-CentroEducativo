@@ -339,48 +339,61 @@ public class JPanelValoracion extends JPanel {
 		List<Estudiante> l = new ArrayList<Estudiante>();
 		
 		// Obtengo la fecha de la ventana.
-		String strFecha = this.jftfFecha.getText();
-		Date dateFecha = null;
-		if (!strFecha.trim().equals("")) {
-			try {
-				dateFecha = sdf.parse(strFecha);
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-		}
+		Date fecha = (Date) this.jftfFecha.getValue();
 
 		for (int i = 0; i < this.listModelEstudiantesSelect.size(); i++) {
 			l.add(this.listModelEstudiantesSelect.getElementAt(i));
 		}
 		
-		// Si no existe elementos en la lista de seleccionados,
-		// mostrará un mensaje. Si existen alumnos, procedemos a insertar o
-		// modificar la nota de los alumnos seleccionados.
-		if (l.size() > 0) {
-			for (Estudiante estudiante : l) {
-				
-				ValoracionMateria vm = ControladorValoracionMateriaJPA
-						.getInstance().findRegistroVM(mActual, pActual, estudiante);
-				
-				// Si hay un registro, se realiza una modificacion.
-				// En caso contrario, una insercion.
-				if (vm != null) {
-					ControladorValoracionMateriaJPA.getInstance()
-						.modificacionNota(vm, nActual, dateFecha);
-				} else {
-					ControladorValoracionMateriaJPA.getInstance()
-						.insercionNota(mActual, pActual, estudiante, nActual, dateFecha);
-				}
-				
+		// Procedemos a realizar los cambios en las valoraciones.
+		for (Estudiante estudiante : l) {
+			
+			ValoracionMateria vm = ControladorValoracionMateriaJPA
+					.getInstance().findRegistroVM(mActual, pActual, estudiante);
+			
+			// Si hay un registro, se realiza una modificacion.
+			// En caso contrario, una insercion.
+			if (vm != null) {
+				ControladorValoracionMateriaJPA.getInstance()
+					.modificacionNota(vm, nActual, fecha);
+			} else {
+				ControladorValoracionMateriaJPA.getInstance()
+					.insercionNota(mActual, pActual, estudiante, nActual, fecha);
 			}
 			
-			JOptionPane.showMessageDialog(null, 
-					"Se han realizado cambios en las notas de los alumanos seleccionados");
-			
-		} else {
-			JOptionPane.showMessageDialog(null, 
-					"Seleccione a los estudiantes que desee modificar su nota");
 		}
+		
+		/*
+		 * PROCESO DE ELIMINACION
+		 * Borramos de la tabla valoracionmateria a los estudiantes
+		 * que hemos deseleccionado.
+		 */
+		
+		// Lista que usaremos para borrar a los estudiantes
+		// que hemos deseleccionado de la tabla valoracionmateria.
+		List<Estudiante> listaNo = new ArrayList<Estudiante>();
+		
+		// Guardamos a todos los alumnos no seleccionados.
+		for (int i = 0; i < this.listModelEstudiantesNoSelect.size(); i++) {
+			listaNo.add(this.listModelEstudiantesNoSelect.getElementAt(i));
+		}
+		
+		// Comprobamos a cada estudiante de la lista.
+		for (Estudiante estudiante : listaNo) {
+			
+			ValoracionMateria vm = ControladorValoracionMateriaJPA
+					.getInstance().findRegistroVM(mActual, pActual, estudiante);
+			
+			// Si hay un registro, se realiza una eliminación.
+			if (vm != null && vm.getValoracion() == this.nActual) {
+				ControladorValoracionMateriaJPA.getInstance()
+					.eliminacionNota(vm);
+			}
+			
+		}
+		
+		JOptionPane.showMessageDialog(null, 
+				"Se han realizado cambios en las notas de los alumanos seleccionados");
 		
 	}
 	

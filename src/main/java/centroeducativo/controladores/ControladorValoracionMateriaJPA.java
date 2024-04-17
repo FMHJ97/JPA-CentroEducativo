@@ -74,8 +74,6 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 		em.getTransaction().begin();
 		em.persist(vm);
 		em.getTransaction().commit();
-		
-		em.close();
 	}
 	
 	/**
@@ -92,8 +90,19 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 		vm.setFecha(fecha);
 		em.merge(vm);
 		em.getTransaction().commit();
+	}
+	
+	/**
+	 * 
+	 * @param vm
+	 */
+	public void eliminacionNota(ValoracionMateria vm) {
+
+		EntityManager em = getEntityManager();
 		
-		em.close();
+		em.getTransaction().begin();
+		em.remove(vm);
+		em.getTransaction().commit();
 	}
 	
 }
