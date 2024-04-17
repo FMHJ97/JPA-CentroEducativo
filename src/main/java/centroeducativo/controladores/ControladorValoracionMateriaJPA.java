@@ -101,6 +101,29 @@ public class ControladorValoracionMateriaJPA extends SuperControladorJPA {
 		EntityManager em = getEntityManager();
 		
 		em.getTransaction().begin();
+		/*
+		 *  IllegalArgumentException: Entity must be managed to call remove, 
+		 *  indica que la entidad que estamos intentando eliminar 
+		 *  (ValoracionMateria) no está gestionada por el EntityManager 
+		 *  actual cuando llamamos a em.remove(vm).
+		 *  
+		 *  En JPA, las entidades pueden encontrarse en tres estados: 
+		 *  
+		 *  Managed (gestionadas por el EntityManager actual, es decir, 
+		 *  enlazadas con la BBDD y con nuestro persistence). 
+		 *  
+		 *  Detached (previamente gestionadas por el EntityManager 
+		 *  pero ya no están asociadas con nuestro persistence). 
+		 *  
+		 *  Transient (nuevas entidades que no han sido asociadas con 
+		 *  nuestro persistence).
+		 *  
+		 *  Teniendo todo esto en cuenta, debemos asegurarnos de que 
+		 *  la entidad que intentamos eliminar está gestionada. 
+		 *  Si no está gestionada, debemos realizar un merge 
+		 *  con el persistence-unit actual antes de eliminarla.
+		 */
+		vm = em.merge(vm);
 		em.remove(vm);
 		em.getTransaction().commit();
 	}
